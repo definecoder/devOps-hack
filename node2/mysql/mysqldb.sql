@@ -1,6 +1,13 @@
 CREATE DATABASE IF NOT EXISTS devops;
 USE devops;
 
+-- CREATE TABLE IF NOT EXISTS users (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     name VARCHAR(50),
+--     phone VARCHAR(50),
+--     count INT
+-- );
+
 CREATE TABLE IF NOT EXISTS Users (
     id VARCHAR(255) PRIMARY KEY,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -16,7 +23,7 @@ CREATE TABLE IF NOT EXISTS Posts (
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
 
--- Insert dummy data into the Users table
+Insert dummy data into the Users table
 INSERT INTO Users (id)
 SELECT '1'
 WHERE NOT EXISTS (

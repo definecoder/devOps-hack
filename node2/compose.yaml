@@ -4,7 +4,7 @@ services:
   app:
     image: app
     build:
-      context: ./node_app
+      context: .
     container_name: node_app
     ports:
       - "7080:7080"
@@ -27,6 +27,7 @@ services:
     links:
       - mongo
       - mysql
+      - redis
 
   mongo:
     image: mongo:latest
@@ -51,7 +52,14 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./mysql/database_users.sql:/docker-entrypoint-initdb.d/database_users.sql
+      - ./mysql/mysqldb.sql:/docker-entrypoint-initdb.d/database_users.sql
+
+  redis:
+    image: mongo:latest
+    restart: always
+    ports:
+      - "6379:6379"
+
 
 
 volumes:

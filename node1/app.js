@@ -4,6 +4,8 @@ const dotenv = require("dotenv");
 const { default: axios } = require("axios");
 dotenv.config();
 
+require("./instrumentation");
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -13,6 +15,8 @@ const PORT = process.env.PORT || 7070;
 const configureOpenTelemetry = require("./tracing");
 const { trace, context, propagation } = require("@opentelemetry/api");
 const tracerProvider = configureOpenTelemetry("node-1-light"); // add service name here
+
+// app.use(countAllRequests());
 
 app.use((req, res, next) => {
   const tracer = tracerProvider.getTracer("express-tracer");

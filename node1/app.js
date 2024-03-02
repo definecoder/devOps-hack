@@ -1,7 +1,11 @@
 const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
+const { default: axios } = require("axios");
 dotenv.config();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 7070;
 
@@ -18,13 +22,22 @@ const validateUser = async (id) => {
 
 app.get("/get-posts/:id", async (req, res) => {
   await validateUser(req.params.id);
-  res.send("Getting posts");
-  // ekhane node 2 er server e request pathabo
+  console.log("Fetching posts");
+  const response = await axios.get(
+    "http://localhost:7080/get-posts/" + req.params.id
+  );
+  res.send(response.data);
 });
 
-app.post("/create-post", (req, res) => {
-  res.send("Creating post");
-  // ekhane node 2 er server e request pathabo
+app.post("/create-post", async (req, res) => {
+  // res.send("Creating post");
+
+  console.log(req.body);
+  const response = await axios.post(
+    "http://localhost:7080/create-post",
+    req.body
+  );
+  res.send(response.data);
 });
 
 app.listen(PORT, () => {

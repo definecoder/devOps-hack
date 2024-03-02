@@ -28,12 +28,19 @@ app.use((req, res, next) => {
 });
 // TELEMETRY //////////////////////////////////////////
 
-const validateUser = async (id) => {
+const validateUser = async (id, parentSpan) => {
+  const childlSpan = tracerProvider
+    .getTracer("express-tracer")
+    .startSpan("validateUser", {
+      parent: parentSpan,
+    });
+
   return new Promise((resolve, reject) => {
     console.log("User id is: ", id);
     console.log("Validating user");
     setTimeout(() => {
       console.log("User is validated");
+      childlSpan.end();
       resolve();
     }, 2000);
   });
@@ -41,13 +48,16 @@ const validateUser = async (id) => {
 
 app.get("/get-posts/:id", async (req, res) => {
   const parentSpan = trace.getSpan(context.active());
-  await validateUser(req.params.id);
+  await validateUser(req.params.id, parentSpan);
   console.log("Fetching posts");
 
   try {
     const respose_data = await context.with(
       trace.setSpan(context.active(), parentSpan),
       async () => {
+        const axiosSpan = tracerProvider
+          .getTracer("express-tracer")
+          .startSpan("context-propagation-axios", { parent: parentSpan });
         const carrier = {};
         propagation.inject(context.active(), carrier);
 
@@ -58,6 +68,8 @@ app.get("/get-posts/:id", async (req, res) => {
             headers: carrier,
           }
         );
+
+        axiosSpan.end();
         return response;
       }
     );
@@ -82,6 +94,11 @@ app.post("/create-post", async (req, res) => {
   const parentSpan = trace.getSpan(context.active());
   console.log(req.body);
   try {
+    await validateUser(req.body.id, parentSpan);
+
+    const axiosSpan = tracerProvider
+      .getTracer("express-tracer")
+      .startSpan("context-propagation-axios", { parent: parentSpan });
     const respose_data = await context.with(
       trace.setSpan(context.active(), parentSpan),
       async () => {
@@ -94,8 +111,9 @@ app.post("/create-post", async (req, res) => {
         });
       }
     );
+    axiosSpan.end();
 
-    console.log("Validation response:", respose_data.data); // Log or use the response as needed
+    console.log("response:", respose_data.data); // Log or use the response as needed
 
     // add what you want as response
     res.send(respose_data.data);
@@ -112,11 +130,42 @@ app.post("/create-post", async (req, res) => {
 });
 
 app.get("/get-all-posts-mysql/:id", async (req, res) => {
+  const parentSpan = trace.getSpan(context.active());
   console.log("Fetching posts from mysql");
-  const response = await axios.get(
-    "http://localhost:7080/get-all-posts-mysql/" + req.params.id
-  );
-  res.send(response.data);
+  try {
+
+    validateUser(req.params.id, parentSpan);
+
+    const axiosSpan = tracerProvider.getTracer("express-tracer")
+    .startSpan("context-propagation-axios", { parent: parentSpan });
+    const respose_data = await context.with(
+      trace.setSpan(context.active(), parentSpan),
+      async () => {
+        const carrier = {};
+        propagation.inject(context.active(), carrier);
+
+        // replace axios call here
+        return axios.get("http://localhost:7080/get-all-posts-mysql/"  + req.params.id, {
+          headers: carrier,
+        });
+      }
+    );
+    axiosSpan.end();
+
+    console.log("Validation response:", respose_data.data); // Log or use the response as needed
+
+    // add what you want as response
+    res.send(respose_data.data);
+  } catch (error) {
+    if (parentSpan) {
+      parentSpan.recordException(error);
+    }
+    res.status(500).send(error.message);
+  } finally {
+    if (parentSpan) {
+      parentSpan.end();
+    }
+  }
 });
 
 app.listen(PORT, () => {

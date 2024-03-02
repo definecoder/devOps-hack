@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Users = require("../models/Users");
 const Redis = require("redis");
 const { trace, context, propagation } = require("@opentelemetry/api");
+const pool = require("../database/mysql");
+
 
 const redisClient = Redis.createClient();
 
@@ -94,4 +96,16 @@ const getPostsExceptCurrentUser = async (req, res) => {
   span.end();
 };
 
-module.exports = { createPost, getPostsExceptCurrentUser };
+const getAllPosts = async (req, res) => {
+  const { id } = req.params;
+  try {
+    let sql = `SELECT * FROM posts WHERE userId != ${id}`;
+    const response = await pool.query(sql);
+
+    res.status(200).json(response[0]);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { createPost, getPostsExceptCurrentUser, getAllPosts };

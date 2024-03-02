@@ -12,13 +12,12 @@ const {
 const { pool } = require("./database/mysql");
 
 // Read the SQL file
-const sqlFilePath = "./db.sql"; // Update the path to your SQL file
+const sqlFilePath = "./mysql/db.sql"; // Update the path to your SQL file
 const sqlQueries = fs.readFileSync(sqlFilePath, "utf8");
 const statements = sqlQueries.split(";");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // TELEMETRY //////////////////////////////////////////
 const configureOpenTelemetry = require("./tracing");

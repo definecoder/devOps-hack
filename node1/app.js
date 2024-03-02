@@ -24,7 +24,7 @@ app.get("/get-posts/:id", async (req, res) => {
   await validateUser(req.params.id);
   console.log("Fetching posts");
   const response = await axios.get(
-    "http://localhost:7080/get-posts/" + req.params.id
+    "http://127.0.0.1:7080/get-posts/" + req.params.id
   );
   res.send(response.data);
 });
@@ -34,7 +34,7 @@ app.post("/create-post", async (req, res) => {
 
   console.log(req.body);
   const response = await axios.post(
-    "http://localhost:7080/create-post",
+    "http://127.0.0.1:7080/create-post",
     req.body
   );
   res.send(response.data);

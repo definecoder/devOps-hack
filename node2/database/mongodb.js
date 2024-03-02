@@ -1,4 +1,4 @@
-var mongoURL = "mongodb://localhost:27017/devops";
+var mongoURL = "mongodb://127.0.0.1:27017/devops";
 // connect to the database
 const mongoose = require("mongoose");
 mongoose

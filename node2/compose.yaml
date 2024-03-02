@@ -1,0 +1,59 @@
+version: "3"
+
+services:
+  app:
+    image: app
+    build:
+      context: ./node_app
+    container_name: node_app
+    ports:
+      - "7080:7080"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mongo
+      DB_PORT: 27017
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: coords
+
+      DB_MYSQL_HOST: mysql
+      DB_MYSQL_USER: root
+      DB_MYSQL_PASSWORD: root
+      DB_MYSQL_DATABASE: devops
+    depends_on:
+      - mongo
+      - mysql
+    links:
+      - mongo
+      - mysql
+
+  mongo:
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/database_users.sql:/docker-entrypoint-initdb.d/database_users.sql
+
+
+volumes:
+  mongodata:
+    driver: local

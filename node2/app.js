@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const dotenv = require("dotenv");
 const fs = require("fs");
 dotenv.config();
@@ -12,12 +13,16 @@ const {
 const { pool } = require("./database/mysql");
 
 // Read the SQL file
-const sqlFilePath = "./db.sql"; // Update the path to your SQL file
+const sqlFilePath = "./mysql/mysqldb.sql"; // Update the path to your SQL file
 const sqlQueries = fs.readFileSync(sqlFilePath, "utf8");
 const statements = sqlQueries.split(";");
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+
 
 
 // TELEMETRY //////////////////////////////////////////

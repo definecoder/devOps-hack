@@ -5,9 +5,18 @@ const { trace, context, propagation } = require("@opentelemetry/api");
 const pool = require("../database/mysql");
 
 
-const redisClient = Redis.createClient();
+const redisClient = Redis.createClient({ 
+  host: 'redis-server', // This should match the service name in docker-compose.yaml
+  port: 6379,
+});
+
+
 
 redisClient.connect();
+redisClient.on('error', err => console.log('Redis Client Error', err))
+redisClient.on('end', () => {
+   console.log('Redis connection ended');
+})
 
 const createPost = async (req, res) => {
 

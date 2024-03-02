@@ -24,10 +24,12 @@ services:
     depends_on:
       - mongo
       - mysql
+      - redis-server
     links:
       - mongo
       - mysql
-      - redis
+      - redis-server
+      # - redis
 
   mongo:
     image: mongo:latest
@@ -54,11 +56,16 @@ services:
     volumes:
       - ./mysql/mysqldb.sql:/docker-entrypoint-initdb.d/database_users.sql
 
-  redis:
-    image: mongo:latest
-    restart: always
-    ports:
-      - "6379:6379"
+  redis-server:
+    image: 'redis:alpine'
+  # redis:
+  #   build:
+  #     context: ./redis
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   container_name: my-redis-container
+  #   ports:
+  #     - "6379:6379"
 
 
 

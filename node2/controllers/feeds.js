@@ -34,6 +34,7 @@ const createPost = async (req, res) => {
       parent: span,
     });
     const user = await Users.findOne({ id: id });
+    userSpan.setAttribute("user", JSON.stringify(user));
     userSpan.end();
 
     const setMongoSpan = tracer.startSpan("set-post-to-mongo", {
@@ -111,6 +112,7 @@ const getPostsExceptCurrentUser = async (req, res) => {
       parent: mongoSpan,
     });
     const users = await Users.find({ id: { $ne: id } });
+    findUserSpan.setAttribute("user", JSON.stringify(users));
     findUserSpan.end();
     const redisSpan = tracer.startSpan("set-to-redis-cache", {
       parent: span,

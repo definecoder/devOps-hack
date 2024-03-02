@@ -21,30 +21,48 @@ const createPost = async (req, res) => {
   ); // Retrieve span from extracted context
 
   const span = tracer.startSpan(
-    "node-2-get-posts",
+    "node-2-create-posts",
     {
-      attributes: { "http.method": "GET", "http.url": req.url },
+      attributes: { "http.method": "POST", "http.url": req.url },
     },
     ctx
   );  
-
+  
   const { id, content } = req.body;
   try {
+    const userSpan = tracer.startSpan("find-user-from-mongo", { 
+      parent: span,
+    });
     const user = await Users.findOne({ id: id });
+    userSpan.setAttribute("user", JSON.stringify(user));
+    userSpan.end();
+
+    const setMongoSpan = tracer.startSpan("set-post-to-mongo", {
+      parent: span,
+    });
     if (user) {
       user.posts.push({ content });
-      await user.save();
-      res.status(201).json(user);
+      await user.save();      
+      setMongoSpan.end();
+      res.status(201).json(user);      
     } else {
+      const newUserSpan = tracer.startSpan("create-new-user-in-mongo", {
+        parent: span,
+      });
       const newUser = new Users({
         id,
         posts: [{ content }],
       });
       await newUser.save();
+      newUserSpan.end();
       res.status(201).json(newUser);
     }
 
+    const redisSpan = tracer.startSpan("reset-redis-cache", {
+      parent: span,
+    });
     await redisClient.FLUSHALL();
+    redisSpan.end();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -64,13 +82,17 @@ const getPostsExceptCurrentUser = async (req, res) => {
   ); // Retrieve span from extracted context
 
   const span = tracer.startSpan(
-    "node-2-get-posts",
+    "node-2-get-posts-from-mongo",
     {
       attributes: { "http.method": "GET", "http.url": req.url },
     },
     ctx
   );  
 
+  const redisSpan = tracer.startSpan("check-from-redis-cache", {
+    parent: span,
+  });
+  
   const posts = await redisClient.get(req.params.id);
 
   if (posts) {
@@ -78,9 +100,23 @@ const getPostsExceptCurrentUser = async (req, res) => {
     return res.status(200).json(JSON.parse(posts));
   }
 
+  redisSpan.end();
+
+  const mongoSpan = tracer.startSpan("get-from-mongo", {
+    parent: span,
+  });
+
   const { id } = req.params;
   try {
+    const findUserSpan = tracer.startSpan("find-user-from-mongo", {
+      parent: mongoSpan,
+    });
     const users = await Users.find({ id: { $ne: id } });
+    findUserSpan.setAttribute("user", JSON.stringify(users));
+    findUserSpan.end();
+    const redisSpan = tracer.startSpan("set-to-redis-cache", {
+      parent: span,
+    });
     redisClient.set(
       req.params.id,
       JSON.stringify(users),
@@ -88,22 +124,48 @@ const getPostsExceptCurrentUser = async (req, res) => {
         console.log(reply);
       }
     );
+    redisSpan.end();
     console.log("from mongodb");
     res.status(200).json(users);
+    mongoSpan.end();
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
+  }  
   span.end();
-};
+};  
 
 const getAllPosts = async (req, res) => {
+
+  const ctx = propagation.extract(context.active(), req.headers); 
+  const tracer = trace.getTracer("express-tracer");
+  console.log("Incoming request headers:", req.headers);
+  console.log(
+    "Extracted span from context:",
+    trace.getSpan(ctx)?.spanContext()
+  ); // Retrieve span from extracted context
+
+  const span = tracer.startSpan(
+    "mysql-get-posts",
+    {
+      attributes: { "http.method": "GET", "http.url": req.url },
+    },
+    ctx
+  );
+
   const { id } = req.params;
   try {
     let sql = `SELECT * FROM posts WHERE userId != ${id}`;
+    
+    const mysqlSpan = tracer.startSpan("mysql-fetchposts-query", {
+      parent: span,
+    });
     const response = await pool.query(sql);
+    mysqlSpan.end();
 
+    span.end();
     res.status(200).json(response[0]);
   } catch (error) {
+    span.end();
     res.status(500).json({ message: error.message });
   }
 };

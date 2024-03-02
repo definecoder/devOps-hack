@@ -40,6 +40,14 @@ app.post("/create-post", async (req, res) => {
   res.send(response.data);
 });
 
+app.get("/get-all-posts-mysql/:id", async (req, res) => {
+  console.log("Fetching posts from mysql");
+  const response = await axios.get(
+    "http://localhost:7080/get-all-posts-mysql/" + req.params.id
+  );
+  res.send(response.data);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

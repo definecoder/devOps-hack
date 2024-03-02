@@ -1,0 +1,64 @@
+{
+	"info": {
+		"_postman_id": "1d053e33-9cd4-4950-aae6-210f4ecd669f",
+		"name": "DevOps Hack Final",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "28297442"
+	},
+	"item": [
+		{
+			"name": "node 1 get posts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:7070/get-posts/1"
+			},
+			"response": []
+		},
+		{
+			"name": "node 2 get posts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:7080/get-posts/2"
+			},
+			"response": []
+		},
+		{
+			"name": "node 2 create a post for a user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"3\",\n    \"content\" : \"Nafi election website baniyechi\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:7080/create-post/"
+			},
+			"response": []
+		},
+		{
+			"name": "node 1 create a post for a user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"1\",\n    \"content\" : \"DevOps Hackathon Ami Kichu pari na\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:7070/create-post/"
+			},
+			"response": []
+		}
+	]
+}

@@ -1,13 +1,33 @@
 const mongoose = require("mongoose");
 const Users = require("../models/Users");
 const Redis = require("redis");
+const { trace, context, propagation } = require("@opentelemetry/api");
 const pool = require("../database/mysql");
+
 
 const redisClient = Redis.createClient();
 
 redisClient.connect();
 
 const createPost = async (req, res) => {
+
+  /// TELEMTRY
+  const ctx = propagation.extract(context.active(), req.headers); 
+  const tracer = trace.getTracer("express-tracer");
+  console.log("Incoming request headers:", req.headers);
+  console.log(
+    "Extracted span from context:",
+    trace.getSpan(ctx)?.spanContext()
+  ); // Retrieve span from extracted context
+
+  const span = tracer.startSpan(
+    "node-2-get-posts",
+    {
+      attributes: { "http.method": "GET", "http.url": req.url },
+    },
+    ctx
+  );  
+
   const { id, content } = req.body;
   try {
     const user = await Users.findOne({ id: id });
@@ -28,9 +48,29 @@ const createPost = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+
+  span.end();
 };
 
 const getPostsExceptCurrentUser = async (req, res) => {
+
+  /// TELEMTRY
+  const ctx = propagation.extract(context.active(), req.headers); 
+  const tracer = trace.getTracer("express-tracer");
+  console.log("Incoming request headers:", req.headers);
+  console.log(
+    "Extracted span from context:",
+    trace.getSpan(ctx)?.spanContext()
+  ); // Retrieve span from extracted context
+
+  const span = tracer.startSpan(
+    "node-2-get-posts",
+    {
+      attributes: { "http.method": "GET", "http.url": req.url },
+    },
+    ctx
+  );  
+
   const posts = await redisClient.get(req.params.id);
 
   if (posts) {
@@ -53,6 +93,7 @@ const getPostsExceptCurrentUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+  span.end();
 };
 
 const getAllPosts = async (req, res) => {
